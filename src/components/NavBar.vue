@@ -51,7 +51,7 @@ const user = ref({
               :class="{ active: isActiveLink(link.path) }"
               :to="link.path"
             >
-              <i :class="link.icon" class="me-2"></i> <!-- Іконка PrimeIcons -->
+              <i :class="link.icon" class="me-2"></i> 
               {{ link.name }}
             </RouterLink>
           </li>

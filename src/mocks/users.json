@@ -1,12 +1,23 @@
 [
     {
       "id": 1,
-      "name": "John Doe",
-      "avatar": "https://randomuser.me/api/portraits/men/1.jpg"
+      "name": "Test User",
+      "email": "testuser@example.com",
+      "password": "123456",
+      "avatar": "https://i.pravatar.cc/150?img=1"
     },
     {
       "id": 2,
-      "name": "Jane Smith",
-      "avatar": "https://randomuser.me/api/portraits/women/1.jpg"
+      "name": "Admin Adminovich",
+      "email": "admin@example.com",
+      "password": "adminpass",
+      "avatar": "https://i.pravatar.cc/150?img=2"
+    },
+    {
+      "id": 3,
+      "name": "John Doe",
+      "email": "john.doe@example.com",
+      "password": "john1234",
+      "avatar": "https://i.pravatar.cc/150?img=3"
     }
-  ]
+]
