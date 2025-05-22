@@ -1,0 +1,36 @@
+[
+    {
+      "id": 1,
+      "location": {
+        "coordinates": [24.021, 49.839]
+      },
+      "description": "Plastic waste",
+      "amount": "little",
+      "status": "not collected",
+      "userId": 1,
+      "photoUrl": "../assets/trash1.png"
+    },
+    {
+      "id": 2,
+      "location": {
+        "coordinates": [24.025, 49.838]
+      },
+      "description": "Glass bottles",
+      "amount": "medium",
+      "status": "collected",
+      "userId": 2,
+      "photoUrl": "../assets/trash1.png"
+    },
+    {
+      "id": 3,
+      "location": {
+        "coordinates": [24.026, 49.837]
+      },
+      "description": "Paper waste",
+      "amount": "many",
+      "status": "not collected",
+      "userId": 3,
+      "photoUrl": "../assets/trash1.png"
+    }
+  ]
+  

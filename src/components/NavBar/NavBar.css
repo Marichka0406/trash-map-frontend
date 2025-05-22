@@ -1,0 +1,31 @@
+nav {
+  background-color: #2b927f;
+  box-shadow: 0 0 5px 2px rgba(96, 116, 104, 0.8);
+}
+
+.navbar-main-link,
+.nav-link.dropdown-toggle {
+  color: #9df8c5;
+  transition: all 0.4s ease;
+}
+
+.navbar-main-link:hover,
+.nav-link.navbar-main-link.active,
+.nav-link.dropdown-toggle:hover {
+  color: white;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.4);
+}
+
+.navbar-brand {
+  transition: transform 0.4s ease;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.4);
+}
+
+.navbar-brand:hover {
+  transform: scale(1.1);
+}
+
+.custom-dropdown {
+  color: #2b927f;
+  min-width: 130px;
+}
