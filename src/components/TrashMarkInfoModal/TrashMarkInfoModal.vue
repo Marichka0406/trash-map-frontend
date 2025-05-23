@@ -1,183 +1,245 @@
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue';
+import { ref, watch } from "vue";
+import Map from "../Map/Map.vue";
+import { getTrashMarkById } from "../../services/trashMarkService";
+import { getAddressFromCoords } from "../../services/geocodingService";
+import { toast } from "vue3-toastify";
 
-import trashImage from '../../assets/trash1.png';
+const props = defineProps<{ visible: boolean; markId: string }>();
+const emit = defineEmits(["close", "updateStatus", "openHistory"]);
 
-const props = defineProps<{
-  isOpen: boolean;
-  mark: {
-    id: number;
-    location: {
-      coordinates: [number, number];
+const loading = ref(true);
+const markData = ref<any>(null);
+const fullscreenImage = ref<string | null>(null);
+const address = ref<string | null>(null);
+
+const close = () => emit("close");
+const openHistory = () => emit("openHistory");
+const updateStatus = () => emit("updateStatus");
+const closeImage = () => (fullscreenImage.value = null);
+
+const formatDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString("uk-UA", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+
+const translateStatus = (status: string) => {
+  switch (status) {
+    case "collected":
+      return "Зібрано";
+    case "not collected":
+      return "Не зібрано";
+    default:
+      return "Невідомо";
+  }
+};
+
+const fetchMarkData = async () => {
+  try {
+    loading.value = true;
+    const data = await getTrashMarkById(props.markId);
+    const user = data.updatedBy;
+
+    markData.value = {
+      description: data.description,
+      photos: data.photos ?? [],
+      status: data.status,
+      history: data.trashMarkHistory,
+      editedAt: data.updatedAt,
+      editedBy: user?.fullName ?? "Невідомо",
+      editedByPhoto: user?.avatar ?? null,
+      coordinates: data.location.coordinates,
     };
-    description: string;
-    amount: string;
-    status: string;
-    userId: number;
-    photoUrl: string;
-    user: {
-      id: number;
-      name: string;
-      avatar: string;
-    };
-  } | null;
-}>();
 
-const emits = defineEmits(['close']);
-const close = () => emits('close');
+    const result = await getAddressFromCoords(
+      markData.value.coordinates[1],
+      markData.value.coordinates[0]
+    );
+    address.value = result;
+  } catch (err) {
+    toast.error("Не вдалося завантажити мітку");
+  } finally {
+    loading.value = false;
+  }
+};
+
+watch(
+  () => props.visible && props.markId,
+  (active) => {
+    if (active) fetchMarkData();
+  },
+  { immediate: true }
+);
 </script>
 
 <template>
-  <div v-if="isOpen" class="modal-overlay" @click.self="close">
-    <div class="modal-content">
-      <button class="close-button" @click="close" aria-label="Close">&times;</button>
-      
-      <div v-if="mark" class="modal-body">
-        <!-- Фото сміття -->
-        <img :src="trashImage" alt="Trash photo" class="info-image" />
-
-        <!-- Інформація про користувача -->
-        <div class="info-box user-info">
-          <img :src="mark.user.avatar" alt="User Avatar" class="user-avatar" />
-          <div>
-            <strong>{{ mark.user.name }}</strong>
-            <div class="reporter-label">Reporter</div>
+  <div class="modal-wrapper">
+    <div
+      v-if="visible"
+      class="modal fade show d-block"
+      tabindex="-1"
+      @click.self="close"
+      aria-modal="true"
+      role="dialog"
+    >
+      <div
+        class="modal-dialog modal-dialog-centered custom-modal-md"
+        role="document"
+      >
+        <div class="modal-content shadow-lg rounded-4">
+          <div
+            class="modal-header border-bottom-0 flex-column align-items-start gap-1"
+          >
+            <h6 class="text-muted mb-0">Адреса</h6>
+            <h5 class="modal-title fw-bold text-success">
+              {{ address || "Позначка" }}
+            </h5>
+            <button
+              type="button"
+              class="btn-close position-absolute end-0 top-0 mt-2 me-2"
+              aria-label="Закрити"
+              @click="close"
+            ></button>
           </div>
-        </div>
 
-        <!-- Кількість сміття -->
-        <div class="info-box">
-          <strong>Amount of trash: </strong>
-          <span v-if="mark.amount === 'little'">
-            <i class="fas fa-trash" style="color: green;"></i> Little
-          </span>
-          <span v-else-if="mark.amount === 'medium'">
-            <i class="fas fa-trash" style="color: orange;"></i> Medium
-          </span>
-          <span v-else-if="mark.amount === 'many'">
-            <i class="fas fa-trash" style="color: red;"></i> Many
-          </span>
-        </div>
+          <div v-if="loading" class="p-5 text-center">
+            <div
+              class="spinner-border text-success"
+              role="status"
+              style="width: 3rem; height: 3rem"
+            >
+              <span class="visually-hidden">Завантаження...</span>
+            </div>
+          </div>
 
-        <!-- Статус збору -->
-        <div class="info-box">
-          <strong>Status: </strong>
-          <span v-if="mark.status === 'collected'">
-            <i class="fas fa-check-circle" style="color: green;"></i> Collected
-          </span>
-          <span v-else>
-            <i class="fas fa-times-circle" style="color: red;"></i> Not Collected
-          </span>
-        </div>
+          <div v-else class="modal-body py-0">
+            <div class="mb-4">
+              <Map
+                :center="markData.coordinates"
+                :zoom="16"
+                :readOnly="true"
+                :editableMarker="false"
+                :height="'200px'"
+                :showControls="false"
+                :markers="[
+                  {
+                    lng: markData.coordinates[0],
+                    lat: markData.coordinates[1],
+                  },
+                ]"
+                class="rounded-3 border"
+              />
+            </div>
 
-        <!-- Опис -->
-        <div class="info-box">
-          <strong>Description:</strong>
-          <p>{{ mark.description }}</p>
-        </div>
+            <div class="scrollable-content px-2">
+              <div
+                class="d-flex justify-content-between align-items-start mb-3"
+              >
+                <div>
+                  <div class="text-muted small mb-1">
+                    Востаннє редаговано користувачем:
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <img
+                      :src="markData.editedByPhoto"
+                      width="32"
+                      class="rounded-circle"
+                    />
+                    <div>
+                      <div class="fw-semibold">{{ markData.editedBy }}</div>
+                      <small class="text-muted">{{
+                        formatDate(markData.editedAt)
+                      }}</small>
+                    </div>
+                  </div>
+                </div>
+                <button
+                  class="btn btn-sm btn-outline-secondary mt-1"
+                  @click="openHistory"
+                  title="Історія змін"
+                >
+                  <i class="fas fa-clock-rotate-left"></i>
+                </button>
+              </div>
 
-        <!-- Локація -->
-        <div class="info-box">
-          <strong>Location:</strong>
-          <p>Latitude: {{ mark.location.coordinates[1] }}, Longitude: {{ mark.location.coordinates[0] }}</p>
+              <div class="d-flex flex-wrap gap-2 mb-3">
+                <img
+                  v-for="(src, i) in markData.photos"
+                  :key="i"
+                  :src="src"
+                  alt="Фото"
+                  class="rounded object-fit-cover"
+                  style="width: 100px; height: 100px; cursor: pointer"
+                  @click="fullscreenImage = src"
+                />
+              </div>
+
+              <div class="mb-2 p-2 border rounded bg-light">
+                <strong>Опис:</strong><br />
+                {{ markData.description }}
+              </div>
+
+              <div class="mb-3 p-2 border rounded bg-light">
+                <strong>Статус сміття:</strong><br />
+                {{ translateStatus(markData.status) }}
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer border-top-0 p-3">
+            <button
+              class="btn btn-success w-100 fw-semibold py-2"
+              @click="updateStatus"
+            >
+              Оновити статус позначки
+            </button>
+          </div>
         </div>
       </div>
     </div>
+
+    <!-- Повноекранне фото -->
+    <Teleport to="body">
+      <div
+        v-if="fullscreenImage"
+        class="fullscreen-backdrop"
+        @click="closeImage"
+      >
+        <img :src="fullscreenImage" class="fullscreen-image" />
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <style scoped>
-.modal-overlay {
+.modal-wrapper {
+  position: relative;
+  z-index: 1050;
+}
+.custom-modal-md {
+  max-width: 600px;
+  height: 90vh;
+}
+.scrollable-content {
+  max-height: 200px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+.fullscreen-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.9);
   display: flex;
-  align-items: center;
   justify-content: center;
-  z-index: 1000;
-  padding: 20px;
-}
-
-.modal-content {
-  background: white;
-  width: 100%;
-  max-width: 500px;
-  max-height: 100vh; 
-  border-radius: 12px;
-  overflow: hidden;
-  position: relative;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-}
-
-.close-button {
-  position: absolute;
-  right: 5px;
-  z-index: 100;
-  background: transparent;
-  border: none;
-  font-size: 40px;
-  color: #28754e;
-  cursor: pointer;
-}
-
-.close-button:hover {
-  color: #e53935;
-}
-
-.modal-body {
-  padding: 60px 20px 20px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  overflow-y: auto;
-  max-height: calc(80vh - 50px);
-  scrollbar-width: none;       
-  -ms-overflow-style: none;     
-}
-
-.modal-body::-webkit-scrollbar {
-  display: none;               
-}
-
-.info-box {
-  background: #f9f9f9;
-  padding: 12px;
-  border-radius: 6px;
-  font-size: 14px;
-  color: #333;
-}
-
-.info-box strong {
-  color: #00796b;
-}
-
-.info-box p {
-  margin: 5px 0 0;
-}
-
-.info-image {
-  width: 100%;
-  height: auto;
-  max-height: 235px; 
-  object-fit: cover;
-  border-radius: 6px 6px 0 0;
-}
-
-.user-info {
-  display: flex;
   align-items: center;
-  gap: 10px;
+  z-index: 1200;
+  cursor: zoom-out;
 }
-
-.user-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.reporter-label {
-  font-size: 12px;
-  color: #6c757d;
+.fullscreen-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
 }
 </style>

@@ -1,3 +1,5 @@
+
+import type { User } from "../types/auth";
 export type TrashStatus = "collected" | "not collected";
 
 export interface Location {
@@ -20,16 +22,21 @@ export interface TrashMarkRequest {
   status: TrashStatus;
 }
 
-export interface TrashMarkResponse {
+export interface СreateTrashMarkResponse {
+  _id: string;
+  location: Location;
+  status: TrashStatus;
+}
+
+export interface GetTrashMarkResponse {
   _id: string;
   description: string;
   location: Location;
   photos: string[];
   status: TrashStatus;
-  createdBy: string;
-  updatedBy?: string;
+  createdBy: User;
+  updatedBy: User;
   trashMarkHistory: TrashMarkHistoryEntry[];
-  lastStatusUpdateAt?: string;
   createdAt: string;
   updatedAt: string;
 }

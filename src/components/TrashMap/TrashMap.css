@@ -4,42 +4,56 @@
   height: 100vh;
 }
 
-.top-controls {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  z-index: 10;
-  background: white;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+.loader {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 25;
 }
 
-.top-controls input {
-  padding: 0.4rem 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 5px solid rgba(43, 146, 127, 0.3);
+  border-top-color: #2b927f;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.add-marker-btn,
-.locate-btn {
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.btn {
   position: absolute;
-  z-index: 10;
-  width: 42px;
-  height: 42px;
-  background-color: #22c55e; /* зелений */
+  width: 44px;
+  height: 44px;
+  background-color: #2b927f;
   color: white;
   border: none;
   border-radius: 50%;
-  font-size: 18px;
   cursor: pointer;
+  font-size: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: background-color 0.2s ease;
+  z-index: 30;
 }
 
-.add-marker-btn:hover,
-.locate-btn:hover {
-  background-color: #16a34a;
+.btn:hover {
+  background-color: #246a62;
+}
+
+.add-marker {
+  bottom: 2rem;
+  left: 1rem;
+}
+
+.locate-me {
+  bottom: 2rem;
+  right: 1rem;
 }

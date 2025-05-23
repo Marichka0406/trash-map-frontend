@@ -2,10 +2,9 @@ export interface User {
   _id: string;
   fullName: string;
   email: string;
-  role: string;
+  role: 'user' | 'admin'
   points: number;
   avatar: string
-  createdAt: Date;
 }
 
 export interface AuthResponse {

@@ -21,6 +21,8 @@ const markerLat = ref(0);
 const description = ref("");
 const photoFiles = ref<File[]>([]);
 const photoPreviews = ref<string[]>([]);
+const fullscreenImage = ref<string | null>(null);
+const loading = ref(false);
 
 const descriptionBlock = ref<HTMLElement | null>(null);
 
@@ -30,17 +32,21 @@ const removePhoto = (index: number) => {
 };
 
 const getUserLocation = () => {
+  loading.value = true;
   if (!navigator.geolocation) {
     toast.error("Геолокація не підтримується");
+    loading.value = false;
     return;
   }
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       markerLat.value = pos.coords.latitude;
       markerLng.value = pos.coords.longitude;
+      loading.value = false;
     },
     () => {
       toast.error("Не вдалося визначити місцезнаходження");
+      loading.value = false;
     },
     {
       enableHighAccuracy: true,
@@ -49,7 +55,6 @@ const getUserLocation = () => {
     }
   );
 };
-
 
 const onMarkerMoved = ({ lng, lat }: { lng: number; lat: number }) => {
   markerLng.value = lng;
@@ -160,60 +165,69 @@ watch(
         </div>
 
         <div class="modal-body py-0">
-          <!-- Карта -->
-          <div class="mb-4">
-            <Map
-              :center="[markerLng, markerLat]"
-              :zoom="16"
-              :readOnly="false"
-              :editableMarker="true"
-              :constrainRadiusMeters="200"
-              :height="'250px'"
-              :showControls="false"
-              @markerMoved="onMarkerMoved"
-              class="rounded-3 border"
-            />
+          <div v-if="loading" class="p-4 text-center">
+            <div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;">
+              <span class="visually-hidden">Завантаження...</span>
+            </div>
           </div>
 
-          <div class="scrollable-content px-1" ref="descriptionBlock">
-            <div class="mb-3">
-              <label for="description" class="form-label">Опис</label>
-              <textarea
-                id="description"
-                class="form-control"
-                rows="3"
-                v-model="description"
-                placeholder="Додайте короткий опис мітки..."
-              ></textarea>
+          <div v-else>
+            <div class="mb-4">
+              <Map
+                :center="[markerLng, markerLat]"
+                :zoom="16"
+                :readOnly="false"
+                :editableMarker="true"
+                :constrainRadiusMeters="200"
+                :height="'250px'"
+                :showControls="false"
+                @markerMoved="onMarkerMoved"
+                class="rounded-3 border"
+              />
             </div>
 
-            <div class="mb-3">
-              <label for="photo" class="form-label">Фото (до 5)</label>
-              <input
-                type="file"
-                class="form-control"
-                id="photo"
-                accept="image/png, image/jpeg"
-                multiple
-                @change="onFileChange"
-                :disabled="photoPreviews.length >= 5"
-              />
+            <div class="scrollable-content px-1" ref="descriptionBlock">
+              <div class="mb-3">
+                <label for="description" class="form-label">Опис</label>
+                <textarea
+                  id="description"
+                  class="form-control"
+                  rows="3"
+                  v-model="description"
+                  placeholder="Додайте короткий опис мітки..."
+                ></textarea>
+              </div>
 
-              <div class="mt-3 d-flex flex-wrap gap-2">
-                <div
-                  v-for="(src, i) in photoPreviews"
-                  :key="i"
-                  class="photo-thumb position-relative"
-                >
-                  <img
-                    :src="src"
-                    class="w-100 h-100 object-fit-cover rounded"
-                    alt="Фото"
-                  />
-                  <button
-                    class="btn-close btn-close-white position-absolute top-0 end-0 m-1"
-                    @click.stop="removePhoto(i)"
-                  ></button>
+              <div class="mb-3">
+                <label for="photo" class="form-label">Фото (до 5)</label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="photo"
+                  accept="image/png, image/jpeg"
+                  multiple
+                  @change="onFileChange"
+                  :disabled="photoPreviews.length >= 5"
+                />
+
+                <div class="mt-3 d-flex flex-wrap gap-2">
+                  <div
+                    v-for="(src, i) in photoPreviews"
+                    :key="i"
+                    class="photo-thumb position-relative"
+                  >
+                    <img
+                      :src="src"
+                      class="w-100 h-100 object-fit-cover rounded"
+                      alt="Фото"
+                      @click="fullscreenImage = src"
+                      style="cursor: pointer"
+                    />
+                    <button
+                      class="btn-close btn-close-white position-absolute top-0 end-0 m-1"
+                      @click.stop="removePhoto(i)"
+                    ></button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -231,7 +245,30 @@ watch(
         </div>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div v-if="fullscreenImage" class="fullscreen-backdrop" @click="fullscreenImage = null">
+        <img :src="fullscreenImage" class="fullscreen-image" />
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <style scoped src="./AddTrashMarkModal.css"></style>
+<style scoped>
+.fullscreen-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1200;
+  cursor: zoom-out;
+}
+.fullscreen-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  border-radius: 8px;
+}
+</style>
