@@ -8,7 +8,7 @@ const router = useRouter();
 const store = useStore();
 
 const navLinks = [
-  { name: "Карта", path: "/map", icon: "pi pi-map" },
+  { name: "Карта сміття", path: "/map", icon: "pi pi-map" },
   { name: "Події", path: "/events", icon: "pi pi-calendar" },
   { name: "FAQ", path: "/faq", icon: "pi pi-question-circle" },
 ];

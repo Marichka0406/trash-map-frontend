@@ -41,9 +41,15 @@ const getUserLocation = () => {
     },
     () => {
       toast.error("Не вдалося визначити місцезнаходження");
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0,
     }
   );
 };
+
 
 const onMarkerMoved = ({ lng, lat }: { lng: number; lat: number }) => {
   markerLng.value = lng;

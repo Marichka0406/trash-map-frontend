@@ -33,3 +33,9 @@ export interface TrashMarkResponse {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface MapTrashMark {
+  _id: string;
+  status: TrashStatus;
+  location: Location;
+}
