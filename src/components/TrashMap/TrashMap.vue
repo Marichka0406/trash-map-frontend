@@ -55,7 +55,6 @@ const onCreateMarker = (markerData: { lng: number; lat: number; description: str
     color: '#f44336'
   })
   filteredMarkers.value = [...allMarkers.value]
-  toast.success('Мітку створено')
   closeAddMarkerModal()
 }
 

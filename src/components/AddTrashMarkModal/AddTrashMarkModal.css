@@ -1,0 +1,27 @@
+.custom-modal-md {
+  max-width: 600px;
+  height: 90vh;
+}
+
+.scrollable-content {
+  max-height: 250px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.photo-thumb {
+  width: 100px;
+  height: 100px;
+  position: relative;
+  cursor: pointer;
+  overflow: hidden;
+  background-color: #f1f1f1;
+}
+
+.btn-close-white {
+  filter: invert(1);
+}
+
+textarea {
+  resize: vertical;
+}

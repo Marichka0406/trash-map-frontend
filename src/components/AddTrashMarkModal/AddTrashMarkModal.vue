@@ -1,106 +1,132 @@
 <script setup lang="ts">
-import { ref, watch, nextTick } from 'vue'
-import { toast } from 'vue3-toastify'
-import Map from '../Map/Map.vue'
+import { ref, watch, nextTick, computed } from "vue";
+import { createTrashMark } from "../../services/trashMarkService";
+import { useStore } from "vuex";
+import { toast } from "vue3-toastify";
+import Map from "../Map/Map.vue";
 
 const props = defineProps({
   visible: {
     type: Boolean,
-    required: true
-  }
-})
+    required: true,
+  },
+});
 
-const emit = defineEmits(['close', 'create'])
+const emit = defineEmits(["close", "create"]);
+const store = useStore();
+const isAuthenticated = computed(() => store.getters["auth/isAuthenticated"]);
 
-const markerLng = ref(0)
-const markerLat = ref(0)
-const description = ref('')
-const photoFiles = ref<File[]>([])
-const photoPreviews = ref<string[]>([])
+const markerLng = ref(0);
+const markerLat = ref(0);
+const description = ref("");
+const photoFiles = ref<File[]>([]);
+const photoPreviews = ref<string[]>([]);
 
-const descriptionBlock = ref<HTMLElement | null>(null)
+const descriptionBlock = ref<HTMLElement | null>(null);
 
 const removePhoto = (index: number) => {
-  photoFiles.value.splice(index, 1)
-  photoPreviews.value.splice(index, 1)
-}
+  photoFiles.value.splice(index, 1);
+  photoPreviews.value.splice(index, 1);
+};
 
 const getUserLocation = () => {
   if (!navigator.geolocation) {
-    toast.error('Геолокація не підтримується')
-    return
+    toast.error("Геолокація не підтримується");
+    return;
   }
   navigator.geolocation.getCurrentPosition(
     (pos) => {
-      markerLat.value = pos.coords.latitude
-      markerLng.value = pos.coords.longitude
+      markerLat.value = pos.coords.latitude;
+      markerLng.value = pos.coords.longitude;
     },
     () => {
-      toast.error('Не вдалося визначити місцезнаходження')
+      toast.error("Не вдалося визначити місцезнаходження");
     }
-  )
-}
+  );
+};
 
 const onMarkerMoved = ({ lng, lat }: { lng: number; lat: number }) => {
-  markerLng.value = lng
-  markerLat.value = lat
-}
+  markerLng.value = lng;
+  markerLat.value = lat;
+};
 
 const onFileChange = (e: Event) => {
-  const input = e.target as HTMLInputElement
-  if (!input.files) return
+  const input = e.target as HTMLInputElement;
+  if (!input.files) return;
 
-  const files = Array.from(input.files)
+  const files = Array.from(input.files);
 
   if (photoFiles.value.length + files.length > 5) {
-    toast.warning('Максимум 5 фото')
-    return
+    toast.warning("Максимум 5 фото");
+    return;
   }
 
   files.forEach((file) => {
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
       if (e.target?.result) {
-        photoFiles.value.push(file)
-        photoPreviews.value.push(e.target.result as string)
+        photoFiles.value.push(file);
+        photoPreviews.value.push(e.target.result as string);
       }
-    }
-    reader.readAsDataURL(file)
-  })
-}
+    };
+    reader.readAsDataURL(file);
+  });
+};
 
-const submit = () => {
+const submit = async () => {
   if (!description.value.trim()) {
-    toast.warning('Будь ласка, додайте опис')
-    return
+    toast.error("Будь ласка, додайте опис");
+    return;
   }
 
-  emit('create', {
-    lng: markerLng.value,
-    lat: markerLat.value,
-    description: description.value,
-    photos: photoFiles.value
-  })
+  if (photoPreviews.value.length === 0) {
+    toast.error("Додайте хоча б одне фото");
+    return;
+  }
 
-  close()
-}
+  if (!isAuthenticated.value) {
+    toast.error("Створення мітки доступне лише авторизованим користувачам");
+    return;
+  }
+
+  try {
+    const newMark = await createTrashMark({
+      description: description.value.trim(),
+      location: {
+        type: "Point",
+        coordinates: [markerLng.value, markerLat.value],
+      },
+      photos: photoPreviews.value,
+      status: "not collected",
+    });
+
+    toast.success("Мітку створено успішно!");
+    emit("create", newMark);
+    close();
+  } catch (err) {
+    toast.error("Помилка при створенні мітки");
+  }
+};
 
 const close = () => {
-  emit('close')
-}
+  emit("close");
+};
 
-watch(() => props.visible, (newVal) => {
-  if (newVal) {
-    getUserLocation()
-    description.value = ''
-    photoFiles.value = []
-    photoPreviews.value = []
+watch(
+  () => props.visible,
+  (newVal) => {
+    if (newVal) {
+      getUserLocation();
+      description.value = "";
+      photoFiles.value = [];
+      photoPreviews.value = [];
 
-    nextTick(() => {
-      descriptionBlock.value?.scrollIntoView({ behavior: 'smooth' })
-    })
+      nextTick(() => {
+        descriptionBlock.value?.scrollIntoView({ behavior: "smooth" });
+      });
+    }
   }
-})
+);
 </script>
 
 <template>
@@ -112,11 +138,19 @@ watch(() => props.visible, (newVal) => {
     aria-modal="true"
     role="dialog"
   >
-    <div class="modal-dialog modal-dialog-centered custom-modal-md" role="document">
+    <div
+      class="modal-dialog modal-dialog-centered custom-modal-md"
+      role="document"
+    >
       <div class="modal-content shadow-lg rounded-4">
         <div class="modal-header border-bottom-0">
           <h5 class="modal-title">Створи нову позначку</h5>
-          <button type="button" class="btn-close" aria-label="Закрити" @click="close"></button>
+          <button
+            type="button"
+            class="btn-close"
+            aria-label="Закрити"
+            @click="close"
+          ></button>
         </div>
 
         <div class="modal-body py-0">
@@ -165,7 +199,11 @@ watch(() => props.visible, (newVal) => {
                   :key="i"
                   class="photo-thumb position-relative"
                 >
-                  <img :src="src" class="w-100 h-100 object-fit-cover rounded" alt="Фото" />
+                  <img
+                    :src="src"
+                    class="w-100 h-100 object-fit-cover rounded"
+                    alt="Фото"
+                  />
                   <button
                     class="btn-close btn-close-white position-absolute top-0 end-0 m-1"
                     @click.stop="removePhoto(i)"
@@ -177,7 +215,11 @@ watch(() => props.visible, (newVal) => {
         </div>
 
         <div class="modal-footer border-top-0 p-3">
-          <button type="button" class="btn btn-success w-100 py-2 fw-semibold" @click="submit">
+          <button
+            type="button"
+            class="btn btn-success w-100 py-2 fw-semibold"
+            @click="submit"
+          >
             Створити мітку
           </button>
         </div>
@@ -186,32 +228,4 @@ watch(() => props.visible, (newVal) => {
   </div>
 </template>
 
-<style scoped>
-.custom-modal-md {
-  max-width: 600px;
-  height: 90vh;
-}
-
-.scrollable-content {
-  max-height: 250px;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-}
-
-.photo-thumb {
-  width: 100px;
-  height: 100px;
-  position: relative;
-  cursor: pointer;
-  overflow: hidden;
-  background-color: #f1f1f1;
-}
-
-.btn-close-white {
-  filter: invert(1);
-}
-
-textarea {
-  resize: vertical;
-}
-</style>
+<style scoped src="./AddTrashMarkModal.css"></style>
